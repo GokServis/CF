@@ -33,7 +33,7 @@ CF_ConfigTable_t CF_config_table = {
      {
          /* channel 0 */
          5,      /* max number of outgoing messages per wakeup */
-         5,      /* max number of rx messages per wakeup */
+         100,    /* max number of rx messages per wakeup (lab burst uplink) */
          3,      /* ACK timer */
          3,      /* NAK timer */
          30,     /* inactivity timer */
@@ -41,7 +41,7 @@ CF_ConfigTable_t CF_config_table = {
          4,      /* NAK limit */
          0x18c8, /* input message id */
          0x08c2, /* output message id */
-         16,     /* input pipe depth */
+         50,     /* input pipe depth (matches OSAL_CONFIG_QUEUE_MAX_DEPTH) */
          {       /* polling directory configuration for CF_MAX_POLLING_DIR_PER_CHAN */
           {
               /* polling directory 0 */
@@ -62,7 +62,7 @@ CF_ConfigTable_t CF_config_table = {
      },
      {        /* channel 1 */
       5,      /* max number of outgoing messages per wakeup */
-      5,      /* max number of rx messages per wakeup */
+      100,    /* max number of rx messages per wakeup (lab burst uplink) */
       3,      /* ack timer */
       3,      /* nak timer */
       30,     /* inactivity timer */
@@ -70,7 +70,7 @@ CF_ConfigTable_t CF_config_table = {
       4,      /* nak limit */
       0x18c9, /* input message id */
       0x08c3, /* output message id */
-      16,     /* input pipe depth */
+      50,     /* input pipe depth (matches OSAL_CONFIG_QUEUE_MAX_DEPTH) */
       {       /* polling directory configuration for CF_MAX_POOLING_DIR_PER_CHAN */
        {
            0 /* zero fill unused polling directory slots */
@@ -79,7 +79,7 @@ CF_ConfigTable_t CF_config_table = {
       1,  /* dequeue enable flag (1 = enabled) */
       .move_dir = ""}},
     480,        /* outgoing_file_chunk_size */
-    "/cf/tmp",  /* temporary file directory */
+    "/cf/tmp",  /* temporary file directory (must be absolute for OSAL VFS; PSP maps /cf -> ./cf) */
     "/cf/fail", /* Stores failed tx file for "polling directory" */
 };
 CFE_TBL_FILEDEF(CF_config_table, CF.config_table, CF config table, cf_def_config.tbl)

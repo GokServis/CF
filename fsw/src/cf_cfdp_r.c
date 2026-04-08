@@ -360,7 +360,8 @@ CFE_Status_t CF_CFDP_R_SendNak(CF_Transaction_t *txn)
 void CF_CFDP_R_Init(CF_Transaction_t *txn)
 {
     int32 ret;
-    char  TempName[CFE_MISSION_MAX_FILE_LEN];
+    /* Full path (tmp_dir + "/<eid>_<seq>.tmp"); must match CF_CFDP_GetTempName output length. */
+    char TempName[CFE_MISSION_MAX_PATH_LEN];
 
     /* set default FIN status */
     txn->state_data.fin_dc = CF_CFDP_FinDeliveryCode_INVALID;
@@ -716,6 +717,29 @@ void CF_CFDP_R_HandleFileRetention(CF_Transaction_t *txn)
                                   "CF R%d(%lu:%lu): cannot move file to %s, error=%d", CF_CFDP_GetPrintClass(txn),
                                   (unsigned long)txn->history->src_eid, (unsigned long)txn->history->seq_num, MoveDest,
                                   (int)OsStatus);
+
+                /*
+                 * Lab robustness: if the destination already exists, attempt to remove it and retry once.
+                 * OS_mv() typically fails when the target exists, and for weight uplinks we want
+                 * deterministic overwrite semantics.
+                 */
+                if (MoveDest != NULL)
+                {
+                    OS_remove(MoveDest);
+                    OsStatus = OS_mv(SubjectFile, MoveDest);
+                    if (OsStatus == OS_SUCCESS)
+                    {
+                        CF_CFDP_SetTxnStatus(txn, CF_TxnStatus_NO_ERROR);
+                        PendingFs = CF_CFDP_FinFileStatus_RETAINED;
+
+                        CFE_EVS_SendEvent(CF_CFDP_R_FILE_RETAINED_EID, CFE_EVS_EventType_INFORMATION,
+                                          "CF R%d(%lu:%lu): successfully retained file as %s",
+                                          CF_CFDP_GetPrintClass(txn), (unsigned long)txn->history->src_eid,
+                                          (unsigned long)txn->history->seq_num, MoveDest);
+
+                        SubjectFile = NULL; /* moved */
+                    }
+                }
             }
         }
     }
